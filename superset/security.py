@@ -184,6 +184,7 @@ def create_missing_perms():
     databases = db.session.query(models.Database).all()
     for database in databases:
         merge_pv('database_access', database.perm)
+        merge_pv('database_csv_upload', database.perm)
 
     logging.info("Creating missing metrics permissions")
     metrics = []

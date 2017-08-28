@@ -549,7 +549,9 @@ class Database(Model, AuditMixinNullable):
         "engine_params": {}
     }
     """))
+    csv_upload_destination =  Column(String(250))
     perm = Column(String(1000))
+
 
     def __repr__(self):
         return self.verbose_name if self.verbose_name else self.database_name

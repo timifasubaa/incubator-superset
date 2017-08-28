@@ -182,7 +182,7 @@ class DatabaseView(SupersetModelView, DeleteMixin):  # noqa
     add_columns = [
         'database_name', 'sqlalchemy_uri', 'cache_timeout', 'extra',
         'expose_in_sqllab', 'allow_run_sync', 'allow_run_async',
-        'allow_ctas', 'allow_dml', 'force_ctas_schema']
+        'allow_ctas', 'allow_dml', 'force_ctas_schema', 'csv_upload_destination']
     search_exclude_columns = (
         'password', 'tables', 'created_by', 'changed_by', 'queries',
         'saved_queries', )
@@ -235,6 +235,13 @@ class DatabaseView(SupersetModelView, DeleteMixin):  # noqa
             "gets unpacked into the [sqlalchemy.MetaData]"
             "(http://docs.sqlalchemy.org/en/rel_1_0/core/metadata.html"
             "#sqlalchemy.schema.MetaData) call. ", True),
+        'csv_upload_destination': _(
+            "Forced destination for CSV uploaded, you can specify "
+            "`{{ username }}` to force a destination relative to it. "
+            "Examples: `{{ username }}.{{ name }}` or "
+            "`superset_csv_uploads.{{ username }}__{{ name }}`. Note "
+            "that superset will create the table, but not the database "
+            "(schema)"),
     }
     label_columns = {
         'expose_in_sqllab': _("Expose in SQL Lab"),
@@ -249,6 +256,7 @@ class DatabaseView(SupersetModelView, DeleteMixin):  # noqa
         'extra': _("Extra"),
         'allow_run_sync': _("Allow Run Sync"),
         'allow_run_async': _("Allow Run Async"),
+        'csv_upload_destination': _("CSV Upload destination"),
     }
 
     def pre_add(self, db):

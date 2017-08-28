@@ -54,12 +54,18 @@ class BaseEngineSpec(object):
     time_groupby_inline = False
     limit_method = LimitMethod.FETCH_MANY
     time_secondary_columns = False
+    supports_csv_upload = True
 
     @classmethod
     def fetch_data(cls, cursor, limit):
         if cls.limit_method == LimitMethod.FETCH_MANY:
             return cursor.fetchmany(limit)
         return cursor.fetchall()
+
+    @classmethod
+    def load_df(self, database, schema, table_name, **kwargs):
+        # paste the df.to_sql call here
+        pass
 
     @classmethod
     def epoch_to_dttm(cls):
@@ -699,6 +705,13 @@ class HiveEngineSpec(PrestoEngineSpec):
         except:
             msg = str(e)
         return msg
+
+    @classmethod
+    def load_df(self, database, schema, table_name, **kwargs):
+        # some HQL to load the data and create a table
+        engine = database.get_sqla_engine()
+
+
 
     @classmethod
     def progress(cls, log_lines):
