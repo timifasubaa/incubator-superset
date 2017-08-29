@@ -308,6 +308,10 @@ class CsvToDatabaseView(SimpleFormView):
     form_title = _('CSV to Database configuration')
 
     def form_get(self, form):
+        print("~~~~~~~~~~~")
+        print("I get to the form default setting function and the form parameters are:")
+        print(form)
+        print("~~~~~~~~~~~")
         # pre process form
         # default values
         form.csv_file.data = None
@@ -403,6 +407,7 @@ class CsvToDatabaseView(SimpleFormView):
                   skip_blank_lines, parse_dates, infer_datetime_format,
                   dayfirst, thousands, decimal, quotechar, escapechar, comment,
                   encoding, error_bad_lines, chunksize):
+        print("I am now converting csv to df")
         # Use Pandas to parse csv file to a dataframe
         upload_path = config['UPLOAD_FOLDER'] + filepath_or_buffer
         # Expose this to api so can specify each field
@@ -437,6 +442,7 @@ class CsvToDatabaseView(SimpleFormView):
     @staticmethod
     def df_to_db(df, name, con, schema, if_exists, index,
                  index_label, chunksize):
+        print("I am now converting from dataframe to database")
 
         engine = create_engine(con, echo=False)
 

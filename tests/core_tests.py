@@ -649,7 +649,6 @@ class CoreTests(SupersetTestCase):
 
     def test_import_csv(self):
         self.login(username='admin')
-
         os.environ['SUPERSET_CONFIG'] = 'tests.superset_test_config'
         con = app.config.get('SQLALCHEMY_DATABASE_URI')
 
@@ -686,6 +685,47 @@ class CoreTests(SupersetTestCase):
         assert 'CSV file "tests_testCSV.csv" uploaded to table' in form_post
         os.remove('tests/testCSV.csv')
 
+    def timi_test(self):
+        self.login(username='admin')
+
+        #os.environ['SUPERSET_CONFIG'] = 'tests.superset_test_config'
+        print("~~~~~~~~~~~")
+        print(app.config)
+        print("~~~~~~~~~~~")
+        con = app.config.get('SQLALCHEMY_DATABASE_URI')
+
+        if sys.version_info[0] == 2:
+            test_file = open('tests/testCSV.csv', 'w+b')
+            csv_writer = csv.writer(test_file)
+            csv_writer.writerow(['Column 1', 'Column 2'])
+            csv_writer.writerow(['Test 1', 'Test 2'])
+        elif sys.version_info[0] == 3:
+            test_file = open('tests/testCSV.csv' , 'ab+')
+            test_file.write(b'Column 1, Column 2\n')
+            test_file.write(b'Column 3, Column 4')
+        test_file.seek(0)
+
+        form_data = {'csv_file': test_file,
+                            'sep': ',',
+                            'name': 'TestName',
+                            'con': con,
+                            'if_exists': 'append',
+                            'index_label': 'test_label',
+                            'chunksize': 1,
+                            'mangle_dupe_cols': True}
+
+        url = '/databaseview/list/'
+        add_datasource_page = self.get_resp(url)
+        assert 'Add CSV Table to Database' in add_datasource_page
+
+        url = '/csvtodatabaseview/form'
+        form_get = self.get_resp(url)
+        assert 'CSV to Database configuration' in form_get
+
+        #self.login(username='admin')
+        form_post = self.get_resp(url, data=form_data)
+        assert 'CSV file "tests_testCSV.csv" uploaded to table' in form_post
+        os.remove('tests/testCSV.csv')
 
 if __name__ == '__main__':
     unittest.main()
