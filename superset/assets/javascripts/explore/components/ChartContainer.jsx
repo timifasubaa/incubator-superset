@@ -7,6 +7,7 @@ import { Alert, Collapse, Panel } from 'react-bootstrap';
 import visMap from '../../../visualizations/main';
 import { d3format } from '../../modules/utils';
 import ExploreActionButtons from './ExploreActionButtons';
+import EditableTitle from '../../components/EditableTitle';
 import FaveStar from '../../components/FaveStar';
 import TooltipWrapper from '../../components/TooltipWrapper';
 import Timer from '../../components/Timer';
@@ -23,6 +24,7 @@ const CHART_STATUS_MAP = {
 const propTypes = {
   actions: PropTypes.object.isRequired,
   alert: PropTypes.string,
+  can_overwrite: PropTypes.bool.isRequired,
   can_download: PropTypes.bool.isRequired,
   chartStatus: PropTypes.string,
   chartUpdateEndTime: PropTypes.number,
@@ -30,6 +32,7 @@ const propTypes = {
   column_formats: PropTypes.object,
   containerId: PropTypes.string.isRequired,
   height: PropTypes.string.isRequired,
+  width: PropTypes.string.isRequired,
   isStarred: PropTypes.bool.isRequired,
   slice: PropTypes.object,
   table_name: PropTypes.string,
@@ -39,6 +42,9 @@ const propTypes = {
   queryResponse: PropTypes.object,
   triggerRender: PropTypes.bool,
   standalone: PropTypes.bool,
+  datasourceType: PropTypes.string,
+  datasourceId: PropTypes.number,
+  timeout: PropTypes.number,
 };
 
 class ChartContainer extends React.PureComponent {
@@ -56,6 +62,7 @@ class ChartContainer extends React.PureComponent {
         (
           prevProps.queryResponse !== this.props.queryResponse ||
           prevProps.height !== this.props.height ||
+          prevProps.width !== this.props.width ||
           this.props.triggerRender
         ) && !this.props.queryResponse.error
         && this.props.chartStatus !== 'failed'
@@ -69,14 +76,15 @@ class ChartContainer extends React.PureComponent {
   getMockedSliceObject() {
     const props = this.props;
     const getHeight = () => {
-      const headerHeight = this.props.standalone ? 0 : 100;
+      const headerHeight = props.standalone ? 0 : 100;
       return parseInt(props.height, 10) - headerHeight;
     };
     return {
-      viewSqlQuery: this.props.queryResponse.query,
+      viewSqlQuery: props.queryResponse.query,
       containerId: props.containerId,
+      datasource: props.datasource,
       selector: this.state.selector,
-      formData: this.props.formData,
+      formData: props.formData,
       container: {
         html: (data) => {
           // this should be a callback to clear the contents of the slice container
@@ -128,10 +136,9 @@ class ChartContainer extends React.PureComponent {
       },
 
       data: {
-        csv_endpoint: getExploreUrl(this.props.formData, 'csv'),
-        json_endpoint: getExploreUrl(this.props.formData, 'json'),
-        standalone_endpoint: getExploreUrl(
-          this.props.formData, 'standalone'),
+        csv_endpoint: getExploreUrl(props.formData, 'csv'),
+        json_endpoint: getExploreUrl(props.formData, 'json'),
+        standalone_endpoint: getExploreUrl(props.formData, 'standalone'),
       },
 
     };
@@ -142,7 +149,19 @@ class ChartContainer extends React.PureComponent {
   }
 
   runQuery() {
-    this.props.actions.runQuery(this.props.formData, true);
+    this.props.actions.runQuery(this.props.formData, true, this.props.timeout);
+  }
+
+  updateChartTitle(newTitle) {
+    const params = {
+      slice_name: newTitle,
+      action: 'overwrite',
+    };
+    const saveUrl = getExploreUrl(this.props.formData, 'base', false, null, params);
+    this.props.actions.saveSlice(saveUrl)
+      .then(() => {
+        this.props.actions.updateChartTitle(newTitle);
+      });
   }
 
   renderChartTitle() {
@@ -160,7 +179,8 @@ class ChartContainer extends React.PureComponent {
     const mockSlice = this.getMockedSliceObject();
     this.setState({ mockSlice });
     try {
-      visMap[this.props.viz_type](mockSlice, this.props.queryResponse);
+      const viz = visMap[this.props.viz_type];
+      viz(mockSlice, this.props.queryResponse, this.props.actions.setControlValue);
     } catch (e) {
       this.props.actions.chartRenderingFailed(e);
     }
@@ -240,7 +260,11 @@ class ChartContainer extends React.PureComponent {
               id="slice-header"
               className="clearfix panel-title-large"
             >
-              {this.renderChartTitle()}
+              <EditableTitle
+                title={this.renderChartTitle()}
+                canEdit={this.props.can_overwrite}
+                onSaveTitle={this.updateChartTitle.bind(this)}
+              />
 
               {this.props.slice &&
                 <span>
@@ -252,7 +276,7 @@ class ChartContainer extends React.PureComponent {
 
                   <TooltipWrapper
                     label="edit-desc"
-                    tooltip="Edit Description"
+                    tooltip="Edit slice properties"
                   >
                     <a
                       className="edit-desc-icon"
@@ -300,26 +324,30 @@ class ChartContainer extends React.PureComponent {
 
 ChartContainer.propTypes = propTypes;
 
-function mapStateToProps(state) {
-  const formData = getFormDataFromControls(state.controls);
+function mapStateToProps({ explore, chart }) {
+  const formData = getFormDataFromControls(explore.controls);
   return {
-    alert: state.chartAlert,
-    can_download: state.can_download,
-    chartStatus: state.chartStatus,
-    chartUpdateEndTime: state.chartUpdateEndTime,
-    chartUpdateStartTime: state.chartUpdateStartTime,
-    column_formats: state.datasource ? state.datasource.column_formats : null,
-    containerId: state.slice ? `slice-container-${state.slice.slice_id}` : 'slice-container',
+    alert: chart.chartAlert,
+    can_overwrite: !!explore.can_overwrite,
+    can_download: !!explore.can_download,
+    datasource: explore.datasource,
+    column_formats: explore.datasource ? explore.datasource.column_formats : null,
+    containerId: explore.slice ? `slice-container-${explore.slice.slice_id}` : 'slice-container',
     formData,
-    latestQueryFormData: state.latestQueryFormData,
-    isStarred: state.isStarred,
-    queryResponse: state.queryResponse,
-    slice: state.slice,
-    standalone: state.standalone,
+    isStarred: explore.isStarred,
+    slice: explore.slice,
+    standalone: explore.standalone,
     table_name: formData.datasource_name,
     viz_type: formData.viz_type,
-    triggerRender: state.triggerRender,
-    datasourceType: state.datasource ? state.datasource.type : null,
+    triggerRender: explore.triggerRender,
+    datasourceType: explore.datasource.type,
+    datasourceId: explore.datasource_id,
+    chartStatus: chart.chartStatus,
+    chartUpdateEndTime: chart.chartUpdateEndTime,
+    chartUpdateStartTime: chart.chartUpdateStartTime,
+    latestQueryFormData: chart.latestQueryFormData,
+    queryResponse: chart.queryResponse,
+    timeout: explore.common.conf.SUPERSET_WEBSERVER_TIMEOUT,
   };
 }
 
