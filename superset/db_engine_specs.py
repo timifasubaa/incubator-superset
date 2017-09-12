@@ -63,11 +63,6 @@ class BaseEngineSpec(object):
         return cursor.fetchall()
 
     @classmethod
-    def load_df(self, database, schema, table_name, **kwargs):
-        # paste the df.to_sql call here
-        pass
-
-    @classmethod
     def epoch_to_dttm(cls):
         raise NotImplementedError()
 
@@ -709,9 +704,8 @@ class HiveEngineSpec(PrestoEngineSpec):
     @classmethod
     def load_df(self, database, schema, table_name, **kwargs):
         # some HQL to load the data and create a table
+        # paste the df.to_sql call here
         engine = database.get_sqla_engine()
-
-
 
     @classmethod
     def progress(cls, log_lines):
