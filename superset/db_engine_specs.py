@@ -26,6 +26,7 @@ import time
 
 import sqlparse
 from sqlalchemy import select
+from sqlalchemy.engine import create_engine
 from sqlalchemy.sql import text
 from flask_babel import lazy_gettext as _
 
@@ -75,6 +76,7 @@ class BaseEngineSpec(object):
         return {}
 
     def upload_csv(self, **data):
+        #first go from CSV to df and then from df to hive?
         # Use Pandas to convert superset dataframe to database
         self.df_to_db(df=df,
                       name=form.name.data,
@@ -697,10 +699,26 @@ class HiveEngineSpec(PrestoEngineSpec):
         return BaseEngineSpec.fetch_result_sets(
             db, datasource_type, force=force)
 
-    def upload_csv(self):
+    def upload_csv(self, uri, ):
         from superset import csv_upload_backend
-        csv_upload_backend.set()
-        sql = """CREATE EXTERNAL TABNLE dlskjfaslkfdj s3://"""
+        csv_upload_backend.set() #set the file in that position and remember the folder name and. make that be called location
+        #get the first line from the CSV file and use that to make the structure. Assume everything is a string. 
+
+        table_name = "samp"
+
+        s3 = 's3a://airpal/superset/'
+        sql = "CREATE EXTERNAL TABLE" , table_name, " ( ", schema_info, " ) ", \
+            "ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LOCATION ", LOCATION
+
+        #create the table in hive?
+        #get the uri from the datasource
+
+        try:
+            #engine = create_engine(Get_hive_URI?)
+            #engine.exectute_statement(sql)
+            x=1
+        except Exception:
+            print("AN EXCEPTION WAS THROWN!")
 
     @classmethod
     def convert_dttm(cls, target_type, dttm):
