@@ -75,7 +75,7 @@ class BaseEngineSpec(object):
         """Returns engine-specific table metadata"""
         return {}
 
-    def upload_csv(self, **data):
+    def upload_csv(self, form):
         #first go from CSV to df and then from df to hive?
         # Use Pandas to convert superset dataframe to database
         self.df_to_db(df=df,
@@ -196,6 +196,72 @@ class BaseEngineSpec(object):
         if indent:
             sql = sqlparse.format(sql, reindent=True)
         return sql
+
+    @classmethod
+    def csv_to_df(names, filepath_or_buffer, sep, header, index_col, squeeze,
+                  prefix, mangle_dupe_cols, skipinitialspace, skiprows, nrows,
+                  skip_blank_lines, parse_dates, infer_datetime_format,
+                  dayfirst, thousands, decimal, quotechar, escapechar, comment,
+                  error_bad_lines, chunksize):
+        # Use Pandas to parse csv file to a dataframe
+        upload_path = config['UPLOAD_FOLDER'] + filepath_or_buffer
+        # Expose this to api so can specify each field
+        chunks = pandas.read_csv(filepath_or_buffer=upload_path,
+                                 sep=sep,
+                                 header=header,
+                                 names=names,
+                                 index_col=index_col,
+                                 squeeze=squeeze,
+                                 prefix=prefix,
+                                 mangle_dupe_cols=mangle_dupe_cols,
+                                 skipinitialspace=skipinitialspace,
+                                 skiprows=skiprows,
+                                 nrows=nrows,
+                                 skip_blank_lines=skip_blank_lines,
+                                 parse_dates=parse_dates,
+                                 infer_datetime_format=infer_datetime_format,
+                                 dayfirst=dayfirst,
+                                 thousands=thousands,
+                                 decimal=decimal,
+                                 quotechar=quotechar,
+                                 escapechar=escapechar,
+                                 comment=comment,
+                                 encoding='utf-8',
+                                 error_bad_lines=error_bad_lines,
+                                 chunksize=chunksize,
+                                 iterator=True)
+        df = pandas.DataFrame()
+        df = pandas.concat(chunk for chunk in chunks)
+        return df
+
+    @classmethod
+    def df_to_db(df, name, con, schema, if_exists, index,
+                 index_label, chunksize):
+
+        engine = create_engine(con, echo=False)
+
+        # Use Pandas to parse dataframe to database
+        df.to_sql(name=name, con=engine, schema=schema, if_exists=if_exists,
+                  index=index, index_label=index_label, chunksize=chunksize)
+
+
+        table = SqlaTable(table_name=name)
+        database = (
+                    db.session
+                    .query(models.Database)
+                    .filter_by(sqlalchemy_uri=con)
+                    .first()
+        )
+        table.database_id = database.id
+        table.user_id = g.user.id
+        table.database = database
+        table.schema = schema
+        db.session.add(table)
+        db.session.commit()
+        # Should I set this to g.user? The other tables don't have an owner.
+        # table.owner = g.user.id
+        # Do I need to set table.sql? None of the default tables have it set.
+        # table.sql =
 
 
 class PostgresEngineSpec(BaseEngineSpec):
@@ -699,24 +765,32 @@ class HiveEngineSpec(PrestoEngineSpec):
         return BaseEngineSpec.fetch_result_sets(
             db, datasource_type, force=force)
 
-    def upload_csv(self, uri, ):
-        from superset import csv_upload_backend
-        csv_upload_backend.set() #set the file in that position and remember the folder name and. make that be called location
-        #get the first line from the CSV file and use that to make the structure. Assume everything is a string. 
+    def upload_csv(self, uri, table_name, filepath):
+        def get_column_names(filepath):
+            import csv
+            with open(filepath, "rb") as f:
+                return csv.reader(f).next()
 
-        table_name = "samp"
+        #from superset import csv_upload_backend
+        #csv_upload_backend.set() 
+        #TODO(timifasubaa): replace the current approach with the results backend approach above.
 
-        s3 = 's3a://airpal/superset/'
-        sql = "CREATE EXTERNAL TABLE" , table_name, " ( ", schema_info, " ) ", \
-            "ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LOCATION ", LOCATION
 
-        #create the table in hive?
-        #get the uri from the datasource
+        s3_location = 's3a://airpal/superset/' + tablename
+        
+        column_names = get_column_names(filepath)
+        schema_definition = ", ".join([col_name + " STRING " for col_name in column_names])
 
+
+        import boto3
+        s3 = boto3.client('airpal')
+        s3.upload_file("superset/tablename/"+source_filename, 'airpal', dest_filename)
+
+        sql = "CREATE EXTERNAL TABLE" , table_name, " ( ", schema_definition, " ) ", \
+            "ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LOCATION ", s3_location
         try:
-            #engine = create_engine(Get_hive_URI?)
-            #engine.exectute_statement(sql)
-            x=1
+            engine = create_engine("hive://hive-server2-silver.synapse:3623/default?auth=NOSASL")
+            engine.exectute_statement(sql)
         except Exception:
             print("AN EXCEPTION WAS THROWN!")
 
