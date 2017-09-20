@@ -140,10 +140,26 @@ class BaseEngineSpec(object):
         # table.owner = g.user.id
         # Do I need to set table.sql? None of the default tables have it set.
         # table.sql =
+
+    @staticmethod
+    def allowed_file(filename):
+        # Only allow specific file extensions as specified in the config
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1] in config['ALLOWED_EXTENSIONS']
+
+    @staticmethod
+    def __upload_file(csv_file):
+      if csv_file and csv_file.filename:
+        filename = secure_filename(csv_file.filename)
+        csv_file.save(os.path.join(config['UPLOAD_FOLDER'],
+                                                 filename))
+        return filename
+
     @classmethod
     def upload_csv(form):
-        #first go from CSV to df and then from df to hive?
+        # first go from CSV to df and then from df to hive?
         # Use Pandas to convert superset dataframe to database
+        filename = __upload_file(form.csv_file.data)
         df = self.csv_to_df(names=form.names.data,
                             filepath_or_buffer=filename,
                             sep=form.sep.data,
@@ -166,6 +182,7 @@ class BaseEngineSpec(object):
                             comment=form.comment.data,
                             error_bad_lines=form.error_bad_lines.data,
                             chunksize=10000)
+
         self.df_to_db(df=df,
                       name=form.name.data,
                       con=form.con.data,
@@ -787,12 +804,14 @@ class HiveEngineSpec(PrestoEngineSpec):
         return BaseEngineSpec.fetch_result_sets(
             db, datasource_type, force=force)
 
-    def upload_csv(self, uri, table_name, filepath):
+    def upload_csv(form):
         def get_column_names(filepath):
             import csv
             with open(filepath, "rb") as f:
                 return csv.reader(f).next()
 
+
+        uri, table_name, filepath
         #from superset import csv_upload_backend
         #csv_upload_backend.set() 
         #TODO(timifasubaa): replace the current approach with the results backend approach above.

@@ -374,7 +374,7 @@ class CsvToDatabaseView(SimpleFormView):
         print(form.data)
         database = db.session.query(models.Database).filter_by(sqlalchemy_uri=form.data.get('con')).one()
         print(dir(database))
-        database.db_engine_spec.upload_csv(form)
+        database.db_engine_spec.upload_csv(database, form)
 
 
         # Go back to welcome page / splash screen
