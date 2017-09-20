@@ -144,7 +144,7 @@ class BaseEngineSpec(object):
     def upload_csv(form):
         #first go from CSV to df and then from df to hive?
         # Use Pandas to convert superset dataframe to database
-         df = self.csv_to_df(names=form.names.data,
+        df = self.csv_to_df(names=form.names.data,
                             filepath_or_buffer=filename,
                             sep=form.sep.data,
                             header=form.header.data,
