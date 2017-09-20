@@ -76,7 +76,7 @@ class BaseEngineSpec(object):
         return {}
 
     @classmethod
-    def csv_to_df(names, filepath_or_buffer, sep, header, index_col, squeeze,
+    def csv_to_df(cls, names, filepath_or_buffer, sep, header, index_col, squeeze,
                   prefix, mangle_dupe_cols, skipinitialspace, skiprows, nrows,
                   skip_blank_lines, parse_dates, infer_datetime_format,
                   dayfirst, thousands, decimal, quotechar, escapechar, comment,
@@ -112,7 +112,7 @@ class BaseEngineSpec(object):
         df = pandas.concat(chunk for chunk in chunks)
         return df
 
-    @classmethod
+    @staticmethod
     def df_to_db(df, name, con, schema, if_exists, index,
                  index_label, chunksize):
 
@@ -142,25 +142,23 @@ class BaseEngineSpec(object):
         # table.sql =
 
     @staticmethod
-    def allowed_file(filename):
-        # Only allow specific file extensions as specified in the config
-        return '.' in filename and \
-               filename.rsplit('.', 1)[1] in config['ALLOWED_EXTENSIONS']
-
-    @staticmethod
-    def __upload_file(csv_file):
-      if csv_file and csv_file.filename:
-        filename = secure_filename(csv_file.filename)
-        csv_file.save(os.path.join(config['UPLOAD_FOLDER'],
-                                                 filename))
-        return filename
-
-    @classmethod
     def upload_csv(form):
         # first go from CSV to df and then from df to hive?
         # Use Pandas to convert superset dataframe to database
-        filename = __upload_file(form.csv_file.data)
-        df = self.csv_to_df(names=form.names.data,
+        def allowed_file(filename):
+            # Only allow specific file extensions as specified in the config
+            return '.' in filename and \
+                   filename.rsplit('.', 1)[1] in config['ALLOWED_EXTENSIONS']
+
+        def upload_file(csv_file):
+            if csv_file and csv_file.filename:
+                filename = secure_filename(csv_file.filename)
+                csv_file.save(os.path.join(config['UPLOAD_FOLDER'],
+                                                 filename))
+                return filename
+
+        filename = upload_file(form.csv_file.data)
+        df = csv_to_df(names=form.names.data,
                             filepath_or_buffer=filename,
                             sep=form.sep.data,
                             header=form.header.data,
@@ -183,7 +181,7 @@ class BaseEngineSpec(object):
                             error_bad_lines=form.error_bad_lines.data,
                             chunksize=10000)
 
-        self.df_to_db(df=df,
+        df_to_db(df=df,
                       name=form.name.data,
                       con=form.con.data,
                       schema=form.schema.data,
@@ -804,13 +802,13 @@ class HiveEngineSpec(PrestoEngineSpec):
         return BaseEngineSpec.fetch_result_sets(
             db, datasource_type, force=force)
 
+    @staticmethod
     def upload_csv(form):
         def get_column_names(filepath):
             import csv
             with open(filepath, "rb") as f:
                 return csv.reader(f).next()
-
-
+                
         uri, table_name, filepath
         #from superset import csv_upload_backend
         #csv_upload_backend.set() 
