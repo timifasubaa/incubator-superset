@@ -140,7 +140,7 @@ class BaseEngineSpec(object):
         # table.owner = g.user.id
         # Do I need to set table.sql? None of the default tables have it set.
         # table.sql =
-
+    @classmethod
     def upload_csv(form):
         #first go from CSV to df and then from df to hive?
         # Use Pandas to convert superset dataframe to database
