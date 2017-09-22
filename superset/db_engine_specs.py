@@ -32,8 +32,11 @@ from flask_babel import lazy_gettext as _
 
 from superset.utils import SupersetTemplateException
 from superset.utils import QueryStatus
-from superset import conf, cache_util, utils
+from superset import conf, cache_util, utils, app 
 
+import os
+
+config = app.config
 tracking_url_trans = conf.get('TRACKING_URL_TRANSFORMER')
 
 Grain = namedtuple('Grain', 'name label function')
@@ -50,7 +53,7 @@ class BaseEngineSpec(object):
     """Abstract class for database engine specific configurations"""
 
     engine = 'base'  # str as defined in sqlalchemy.engine.engine
-    cursor_execute_kwargs = {}
+    cursor_execute_kwargs = {}  
     time_grains = tuple()
     time_groupby_inline = False
     limit_method = LimitMethod.FETCH_MANY
@@ -158,7 +161,7 @@ class BaseEngineSpec(object):
                 return filename
 
         filename = upload_file(form.csv_file.data)
-        df = csv_to_df(names=form.names.data,
+        BaseEngineSpec.csv_to_df(names=form.names.data,
                             filepath_or_buffer=filename,
                             sep=form.sep.data,
                             header=form.header.data,
@@ -181,7 +184,7 @@ class BaseEngineSpec(object):
                             error_bad_lines=form.error_bad_lines.data,
                             chunksize=10000)
 
-        df_to_db(df=df,
+        BaseEngineSpec.df_to_db(df=df,
                       name=form.name.data,
                       con=form.con.data,
                       schema=form.schema.data,
@@ -808,7 +811,7 @@ class HiveEngineSpec(PrestoEngineSpec):
             import csv
             with open(filepath, "rb") as f:
                 return csv.reader(f).next()
-                
+
         uri, table_name, filepath
         #from superset import csv_upload_backend
         #csv_upload_backend.set() 
@@ -824,14 +827,9 @@ class HiveEngineSpec(PrestoEngineSpec):
         import boto3
         s3 = boto3.client('airpal')
         s3.upload_file("superset/tablename/"+source_filename, 'airpal', dest_filename)
-
-        sql = "CREATE EXTERNAL TABLE" , table_name, " ( ", schema_definition, " ) ", \
-            "ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LOCATION ", s3_location
-        try:
-            engine = create_engine("hive://hive-server2-silver.synapse:3623/default?auth=NOSASL")
-            engine.exectute_statement(sql)
-        except Exception:
-            print("AN EXCEPTION WAS THROWN!")
+        return True
+        #return whether or not the upload was successful
+        
 
     @classmethod
     def convert_dttm(cls, target_type, dttm):
