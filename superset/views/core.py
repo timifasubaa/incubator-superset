@@ -407,10 +407,13 @@ class CsvToDatabaseView(SimpleFormView):
 
 
         # Go back to welcome page / splash screen
+
+        db_name = db.session.query(models.Database.database_name).filter_by(sqlalchemy_uri=form.data.get('con')).one()
+
         message = _('CSV file "{0}" uploaded to table "{1}" in '
                     'database "{2}"'.format(form.csv_file.data.filename,
                                             form.name.data,
-                                            form.con.data))
+                                            db_name))
         flash(message, 'info')
         return redirect('/tablemodelview/list/')
 
