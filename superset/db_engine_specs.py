@@ -132,8 +132,6 @@ class BaseEngineSpec(object):
 
     @staticmethod
     def upload_csv(form):
-        # first go from CSV to df and then from df to hive?
-        # Use Pandas to convert superset dataframe to database
         print(results_backend)
         def allowed_file(filename):
             # Only allow specific file extensions as specified in the config
@@ -147,7 +145,7 @@ class BaseEngineSpec(object):
                                                  filename))
                 return filename
 
-        filename = secure_filename(form.csv_file.data)
+        filename = secure_filename(form.csv_file.data.filename)
         df = BaseEngineSpec.csv_to_df(names=form.names.data,
                             filepath_or_buffer=filename,
                             sep=form.sep.data,
