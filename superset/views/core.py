@@ -394,6 +394,12 @@ class CsvToDatabaseView(SimpleFormView):
             table.schema = form.schema.data
             db.session.add(table)
             db.session.commit()
+
+            #post_add? 
+            table.fetch_metadata()
+            security.merge_perm(sm, 'datasource_access', table.get_perm())
+            if table.schema:
+                security.merge_perm(sm, 'schema_access', table.schema_perm)
         # Should I set this to g.user? The other tables don't have an owner.
         # table.owner = g.user.id
         # Do I need to set table.sql? None of the default tables have it set.
