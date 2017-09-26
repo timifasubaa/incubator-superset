@@ -129,9 +129,28 @@ class BaseEngineSpec(object):
         df.to_sql(name=name, con=engine, schema=schema, if_exists=if_exists,
                   index=index, index_label=index_label, chunksize=chunksize)
 
+        database = (
+            db.session
+                .query(models.Database)
+                .filter_by(sqlalchemy_uri=form.con.data)
+                .first()
+        )
+        table.database_id = database.id
+        table.user_id = g.user.id
+        table.database = database
+        table.schema = form.schema.data
+        db.session.add(table)
+        db.session.commit()
+
+        #post_add
+        table.fetch_metadata()
+        security.merge_perm(sm, 'datasource_access', table.get_perm())
+        if table.schema:
+            security.merge_perm(sm, 'schema_access', table.schema_perm)
+
 
     @staticmethod
-    def upload_csv(form):
+    def upload_csv(form, table):
         print(results_backend)
         def allowed_file(filename):
             # Only allow specific file extensions as specified in the config
@@ -791,7 +810,7 @@ class HiveEngineSpec(PrestoEngineSpec):
             db, datasource_type, force=force)
 
     @staticmethod
-    def upload_csv(form):
+    def upload_csv(form, table):
         def get_column_names(filepath):
             import csv
             with open(filepath, "rb") as f:
