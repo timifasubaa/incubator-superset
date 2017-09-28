@@ -836,13 +836,14 @@ class HiveEngineSpec(PrestoEngineSpec):
             return False
             #raise this error to the UI
         file_contents="".join(list(open(upload_path)))
+        #need to compress?
         csv_upload_backend.set(dest_path, file_contents)
 
         #import boto3
         #s3 = boto3.client('s3')
         #s3.upload_file(upload_path, 'airbnb-superset', s3_dir+file_name)
         sql = "CREATE EXTERNAL TABLE {} ( {} ) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE LOCATION '{}'"\
-        .format(table_name, schema_definition, os.path.join("s3a://", bucket_path, upload_prefix, table_name))
+            .format(table_name, schema_definition, os.path.join("s3a://", bucket_path, upload_prefix, table_name))
         try:
             logging.info(form.con.data)
             engine = create_engine(form.con.data)
