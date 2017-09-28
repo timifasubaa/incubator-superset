@@ -300,7 +300,7 @@ RESULTS_BACKEND = None
 
 #The bucket where you want to store your external hive tables created 
 #from CSV files. For example, 'companyname-superset'
-CSV_TO_HIVE_UPLOAD_BUCKET = None 
+CSV_TO_HIVE_UPLOAD_BUCKET = 'airbnb-superset' 
 
 #The directory within the bucket specified that will contain all the external tables
 CSV_TO_HIVE_UPLOAD_DIRECTORY = "EXTERNAL_HIVE_TABLES/"
