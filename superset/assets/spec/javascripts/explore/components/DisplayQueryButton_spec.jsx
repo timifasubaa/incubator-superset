@@ -27,4 +27,9 @@ describe('DisplayQueryButton', () => {
     wrapper.find('.modal-trigger').simulate('click');
     expect(wrapper.find(Modal)).to.have.lengthOf(1);
   });
+  it('renders buttons with correct text', () => {
+      expect(wrapper.find(Button).contains('View Query')).to.eql(true);
+    });
 });
+
+  

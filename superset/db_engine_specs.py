@@ -828,12 +828,9 @@ class HiveEngineSpec(PrestoEngineSpec):
         column_names = get_column_names(upload_path)
         schema_definition = ", ".join([col_name + " STRING " for col_name in column_names])
 
-
-        from superset import csv_upload_backend
-        if not csv_upload_backend:
-            logging.info("No upload backend specified")
-            flash("No upload backend specified. This can be set in the config file.", 'alert')
-            return False
+        #logging.info("No upload backend specified")
+        #flash("No upload backend specified. This can be set in the config file.", 'alert')
+        #return False
 
         import boto3
         s3 = boto3.client('s3')
