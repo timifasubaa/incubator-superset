@@ -835,13 +835,13 @@ class HiveEngineSpec(PrestoEngineSpec):
             flash("No upload backend specified. This can be set in the config file.", 'alert')
             return False
             #raise this error to the UI
-        file_contents="".join(list(open(upload_path)))
+        #file_contents="".join(list(open(upload_path)))
         #need to compress?
-        csv_upload_backend.set(dest_path, file_contents)
+        #csv_upload_backend.set(dest_path, file_contents)
 
-        #import boto3
-        #s3 = boto3.client('s3')
-        #s3.upload_file(upload_path, 'airbnb-superset', s3_dir+file_name)
+        import boto3
+        s3 = boto3.client('s3')
+        s3.upload_file(upload_path, 'airbnb-superset', os.path.join(upload_prefix, table_name, filename))
         sql = "CREATE EXTERNAL TABLE {} ( {} ) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE LOCATION '{}'"\
             .format(table_name, schema_definition, os.path.join("s3a://", bucket_path, upload_prefix, table_name))
         try:
