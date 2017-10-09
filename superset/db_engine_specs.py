@@ -25,6 +25,8 @@ import textwrap
 import time
 import os
 
+import csv
+import boto3
 import pandas
 import sqlparse
 from sqlalchemy import select
@@ -38,6 +40,8 @@ from werkzeug.utils import secure_filename
 from superset.utils import SupersetTemplateException
 from superset.utils import QueryStatus
 from superset import conf, cache_util, db, utils, app
+
+config = app.config
 
 tracking_url_trans = conf.get('TRACKING_URL_TRANSFORMER')
 
@@ -767,6 +771,56 @@ class HiveEngineSpec(PrestoEngineSpec):
     def fetch_result_sets(cls, db, datasource_type, force=False):
         return BaseEngineSpec.fetch_result_sets(
             db, datasource_type, force=force)
+
+    @staticmethod
+    def upload_csv(form, table):
+        """Uploads a csv file and creates a superset datasource in Hive."""
+        def get_column_names(filepath):
+            with open(filepath, "rb") as f:
+                return csv.reader(f).next()
+
+        table_name = form.name.data
+        filename = form.csv_file.data.filename
+
+        bucket_path = config["CSV_TO_HIVE_UPLOAD_BUCKET"]
+
+        if not bucket_path:
+            logging.info("No upload bucket specified")
+            flash(
+                "No upload bucket specified. "
+                "You can specify one in the config file.",
+                "alert")
+            return False
+
+        upload_prefix = config["CSV_TO_HIVE_UPLOAD_DIRECTORY"]
+        dest_path = os.path.join(table_name, filename)
+
+        upload_path = config['UPLOAD_FOLDER'] + secure_filename(
+            form.csv_file.data.filename)
+        column_names = get_column_names(upload_path)
+        schema_definition = ", ".join(
+            [s + " STRING " for s in column_names])
+
+        s3 = boto3.client('s3')
+        location =\
+            os.path.join("s3a://", bucket_path, upload_prefix, table_name)
+        s3.upload_file(
+            upload_path,
+            'airbnb-superset',
+            os.path.join(upload_prefix, table_name, filename))
+        sql = """CREATE EXTERNAL TABLE {table_name} ( {schema_definition} )
+            ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS
+            TEXTFILE LOCATION '{location}'""".format(**locals())
+        try:
+            logging.info(form.con.data)
+            engine = create_engine(form.con.data)
+            engine.execute(sql)
+            return True
+        except Exception as e:
+            logging.exception(e)
+            logging.info(sql)
+            flash(BaseEngineSpec.extract_error_message(e), "alert")
+            return False
 
     @classmethod
     def convert_dttm(cls, target_type, dttm):
