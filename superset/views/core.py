@@ -810,13 +810,13 @@ class Superset(BaseSupersetView):
         existing_datasources = ConnectorRegistry.get_all_datasources(db.session)
         datasources = [
             d for d in existing_datasources if d.full_name in db_ds_names]
-        role = sm.find_role(role_name)
+        role = security_manager.find_role(role_name)
         # remove all permissions
         role.permissions = []
         # grant permissions to the list of datasources
         granted_perms = []
         for datasource in datasources:
-            view_menu_perm = sm.find_permission_view_menu(
+            view_menu_perm = security_manager.find_permission_view_menu(
                 view_menu_name=datasource.perm,
                 permission_name='datasource_access')
             # prevent creating empty permissions
@@ -885,7 +885,7 @@ class Superset(BaseSupersetView):
             for r in session.query(DAR).all():
                 datasource = ConnectorRegistry.get_datasource(
                     r.datasource_type, r.datasource_id, session)
-                user = sm.get_user_by_id(r.created_by_fk)
+                user = security_manager.get_user_by_id(r.created_by_fk)
                 if not datasource or \
                    self.datasource_access(datasource, user):
                     # datasource does not exist anymore
@@ -905,7 +905,7 @@ class Superset(BaseSupersetView):
             flash(DATASOURCE_MISSING_ERR, 'alert')
             return json_error_response(DATASOURCE_MISSING_ERR)
 
-        requested_by = sm.find_user(username=created_by_username)
+        requested_by = security_manager.find_user(username=created_by_username)
         if not requested_by:
             flash(USER_MISSING_ERR, 'alert')
             return json_error_response(USER_MISSING_ERR)
@@ -927,7 +927,7 @@ class Superset(BaseSupersetView):
         if self.all_datasource_access() or g.user.id == datasource.owner_id:
             # can by done by admin only
             if role_to_grant:
-                role = sm.find_role(role_to_grant)
+                role = security_manager.find_role(role_to_grant)
                 requested_by.roles.append(role)
                 msg = __(
                     '%(user)s was granted the role %(role)s that gives access '
@@ -941,10 +941,10 @@ class Superset(BaseSupersetView):
                 flash(msg, 'info')
 
             if role_to_extend:
-                perm_view = sm.find_permission_view_menu(
+                perm_view = security_manager.find_permission_view_menu(
                     'email/datasource_access', datasource.perm)
-                role = sm.find_role(role_to_extend)
-                sm.add_permission_role(role, perm_view)
+                role = security_manager.find_role(role_to_extend)
+                security_manager.add_permission_role(role, perm_view)
                 msg = __('Role %(r)s was extended to provide the access to '
                          'the datasource %(ds)s', r=role_to_extend,
                          ds=datasource.full_name)
@@ -1758,7 +1758,7 @@ class Superset(BaseSupersetView):
     @expose('/fave_dashboards_by_username/<username>/', methods=['GET'])
     def fave_dashboards_by_username(self, username):
         """This lets us use a user's username to pull favourite dashboards"""
-        user = sm.find_user(username=username)
+        user = security_manager.find_user(username=username)
         return self.fave_dashboards(user.get_id())
 
     @api
@@ -2118,7 +2118,7 @@ class Superset(BaseSupersetView):
         user_name = payload['user']
         cluster_name = payload['cluster']
 
-        user = sm.find_user(username=user_name)
+        user = security_manager.find_user(username=user_name)
         DruidDatasource = ConnectorRegistry.sources['druid']
         DruidCluster = DruidDatasource.cluster_class
         if not user:

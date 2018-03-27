@@ -281,10 +281,10 @@ class DruidTests(SupersetTestCase):
         security.merge_perm(sm, 'datasource_access', gamma_ds.perm)
         security.merge_perm(sm, 'datasource_access', no_gamma_ds.perm)
 
-        perm = sm.find_permission_view_menu(
+        perm = security_manager.find_permission_view_menu(
             'datasource_access', gamma_ds.get_perm())
-        sm.add_permission_role(sm.find_role('Gamma'), perm)
-        sm.get_session.commit()
+        security_manager.add_permission_role(security_manager.find_role('Gamma'), perm)
+        security_manager.get_session.commit()
 
         self.login(username='gamma')
         url = '/druiddatasourcemodelview/list/'
@@ -331,10 +331,11 @@ class DruidTests(SupersetTestCase):
         db.session.commit()
 
         view_menu_name = cluster.datasources[0].get_perm()
-        view_menu = sm.find_view_menu(view_menu_name)
-        permission = sm.find_permission('datasource_access')
+        view_menu = security_manager.find_view_menu(view_menu_name)
+        permission = security_manager.find_permission('datasource_access')
 
-        pv = sm.get_session.query(sm.permissionview_model).filter_by(
+        pv = security_manager.get_session.query(
+            security_manager.permissionview_model).filter_by(
             permission=permission, view_menu=view_menu).first()
         assert pv is not None
 

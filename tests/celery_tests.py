@@ -104,11 +104,11 @@ class CeleryTestCase(SupersetTestCase):
         subprocess.Popen(
             worker_command, shell=True, stdout=subprocess.PIPE)
 
-        admin = appbuilder.sm.find_user('admin')
+        admin = security_manager.find_user('admin')
         if not admin:
-            appbuilder.sm.add_user(
+            security_manager.add_user(
                 'admin', 'admin', ' user', 'admin@fab.org',
-                appbuilder.sm.find_role('Admin'),
+                security_manager.find_role('Admin'),
                 password='general')
         cli.load_examples(load_test_data=True)
 

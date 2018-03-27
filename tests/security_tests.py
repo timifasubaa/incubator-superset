@@ -10,7 +10,7 @@ from .base_tests import SupersetTestCase
 
 def get_perm_tuples(role_name):
     perm_set = set()
-    for perm in sm.find_role(role_name).permissions:
+    for perm in security_manager.find_role(role_name).permissions:
         perm_set.add((perm.permission.name, perm.view_menu.name))
     return perm_set
 
