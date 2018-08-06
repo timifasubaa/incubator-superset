@@ -103,6 +103,11 @@ logging.getLogger('pyhive.presto').setLevel(logging.INFO)
 
 db = SQLA(app)
 
+print("vvvv")
+print(dir(db))
+print(type(db.session))
+print("^^^^^^^")
+
 if conf.get('WTF_CSRF_ENABLED'):
     csrf = CSRFProtect(app)
     csrf_exempt_list = conf.get('WTF_CSRF_EXEMPT_LIST', [])

@@ -117,6 +117,7 @@ def check_ownership(obj, raise_if_false=True):
     session = db.create_scoped_session()
     orig_obj = session.query(obj.__class__).filter_by(id=obj.id).first()
     owner_names = (user.username for user in orig_obj.owners)
+    session.close()
     if (
             hasattr(orig_obj, 'created_by') and
             orig_obj.created_by and
@@ -966,6 +967,7 @@ class Superset(BaseSupersetView):
         for r in requests:
             session.delete(r)
         session.commit()
+        session.close()
         return redirect('/accessrequestsmodelview/list/')
 
     def get_form_data(self, slice_id=None):
@@ -1464,12 +1466,14 @@ class Superset(BaseSupersetView):
         msg = 'Slice [{}] has been saved'.format(slc.slice_name)
         session.add(slc)
         session.commit()
+        session.close()
         flash(msg, 'info')
 
     def overwrite_slice(self, slc):
         session = db.session()
         session.merge(slc)
         session.commit()
+        session.close()
         msg = 'Slice [{}] has been overwritten'.format(slc.slice_name)
         flash(msg, 'info')
 
@@ -1667,6 +1671,7 @@ class Superset(BaseSupersetView):
              if int(key) in slice_ids}
         md['default_filters'] = json.dumps(applicable_filters)
         dashboard.json_metadata = json.dumps(md)
+        session.close()
 
     @api
     @has_access_api
@@ -2031,7 +2036,7 @@ class Superset(BaseSupersetView):
             slices = session.query(models.Slice).filter_by(
                 datasource_id=table.id,
                 datasource_type=table.type).all()
-
+        session.close()
         for slc in slices:
             try:
                 obj = slc.get_viz(force=True)
@@ -2068,6 +2073,7 @@ class Superset(BaseSupersetView):
         else:
             count = len(favs)
         session.commit()
+        session.close()
         return json_success(json.dumps({'count': count}))
 
     @has_access
@@ -2080,7 +2086,7 @@ class Superset(BaseSupersetView):
             qry = qry.filter_by(id=int(dashboard_id))
         else:
             qry = qry.filter_by(slug=dashboard_id)
-
+        session.close()
         dash = qry.one()
         datasources = set()
         for slc in dash.slices:
@@ -2478,12 +2484,14 @@ class Superset(BaseSupersetView):
                 query.status = QueryStatus.FAILED
                 query.error_message = msg
                 session.commit()
+                session.close()
                 return json_error_response('{}'.format(msg))
 
             resp = json_success(json.dumps(
                 {'query': query.to_dict()}, default=utils.json_int_dttm_ser,
                 ignore_nan=True), status=202)
             session.commit()
+            session.close()
             return resp
 
         # Sync request.
@@ -2505,6 +2513,7 @@ class Superset(BaseSupersetView):
                 ignore_nan=True,
                 encoding=None,
             )
+            session.close()
         except Exception as e:
             logging.exception(e)
             return json_error_response('{}'.format(e))

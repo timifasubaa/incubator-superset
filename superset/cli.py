@@ -222,6 +222,7 @@ def refresh_druid(datasource, merge):
             'Refreshed metadata from cluster '
             '[' + cluster.cluster_name + ']')
     session.commit()
+    session.close()
 
 
 @app.cli.command()
