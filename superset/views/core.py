@@ -11,7 +11,6 @@ import os
 import re
 import time
 import traceback
-from urllib import parse
 
 from flask import (
     flash, g, Markup, redirect, render_template, request, Response, url_for,
@@ -25,6 +24,7 @@ from flask_babel import lazy_gettext as _
 import pandas as pd
 import simplejson as json
 from six import text_type
+from six.moves.urllib import parse
 import sqlalchemy as sqla
 from sqlalchemy import and_, create_engine, or_, update
 from sqlalchemy.engine.url import make_url
@@ -255,6 +255,13 @@ class DatabaseView(SupersetModelView, DeleteMixin, YamlExportMixin):  # noqa
 
     def pre_update(self, db):
         self.pre_add(db)
+
+    def pre_delete(self, obj):
+        if obj.tables:
+            raise SupersetException(Markup(
+                'Cannot delete a database that has tables attached. '
+                "Here's the list of associated tables: " +
+                ', '.join('{}'.format(o) for o in obj.tables)))
 
     def _delete(self, pk):
         DeleteMixin._delete(self, pk)
@@ -1431,7 +1438,7 @@ class Superset(BaseSupersetView):
 
     def save_slice(self, slc):
         session = db.session()
-        msg = 'Slice [{}] has been saved'.format(slc.slice_name)
+        msg = _('Chart [{}] has been saved').format(slc.slice_name)
         session.add(slc)
         session.commit()
         flash(msg, 'info')
@@ -1440,7 +1447,7 @@ class Superset(BaseSupersetView):
         session = db.session()
         session.merge(slc)
         session.commit()
-        msg = 'Slice [{}] has been overwritten'.format(slc.slice_name)
+        msg = _('Chart [{}] has been overwritten').format(slc.slice_name)
         flash(msg, 'info')
 
     @api
