@@ -29,7 +29,7 @@ class SupersetQuery(object):
         for statement in self._parsed:
             self.__extract_from_token(statement)
             self._limit = self._extract_limit_from_query(statement)
-        self._table_names = self._table_names - self._alias_names
+        self._table_names = self._remove_alias_tables(self._table_names, self._alias_names)
 
     @property
     def tables(self):
@@ -38,6 +38,14 @@ class SupersetQuery(object):
     @property
     def limit(self):
         return self._limit
+
+    def _remove_alias_tables(tables, aliases):
+        validated_tables = []
+        for table in tables:
+            if (table in aliases or ('.' in table and table.split('.')[0] in aliases)):
+                continue
+            validated_tables.append(table)
+        return validated_tables
 
     def is_select(self):
         return self._parsed[0].get_type() == 'SELECT'

@@ -8,7 +8,6 @@ import unittest
 
 from superset import sql_parse
 
-
 class SupersetTestCase(unittest.TestCase):
 
     def extract_tables(self, query):
@@ -310,6 +309,7 @@ class SupersetTestCase(unittest.TestCase):
         self.assertEquals(True, sql.is_explain())
         self.assertEquals(False, sql.is_select())
         self.assertEquals(True, sql.is_readonly())
+        self.assertEquals(True, False)
 
     def test_complex_extract_tables(self):
         query = """SELECT sum(m_examples) AS "sum__m_example"
@@ -338,3 +338,41 @@ class SupersetTestCase(unittest.TestCase):
         self.assertEquals(
             {'table_a', 'table_b', 'table_c'},
             self.extract_tables(query))
+
+    def test_complex_extract_tables(self):
+        query = """SELECT somecol AS somecol
+            FROM
+              (WITH bla AS
+                 (SELECT col_a
+                  FROM a
+                  WHERE dim_is_airbnb_fulltime_employee = 0
+                    AND id_experience_reservation NOT IN
+                      ( SELECT interesting_col
+                       FROM b ) ),
+                    rb AS
+                 ( SELECT yet_another_column
+                  FROM
+                    ( SELECT a
+                     FROM c
+                     GROUP BY the_other_col ) not_table
+                  LEFT JOIN bla rebook ON rebook.id_booking_guest = not_table.bad_col0
+                  WHERE not_table.ds_experience_starts_at <= '2018-08-27'
+                  GROUP BY not_table.bad_col1 ,
+                           not_table.bad_col2 ,
+                  ORDER BY not_table.bad_col_3 DESC , not_table.bad_col4 ,
+                                                    not_table.bad_col5) SELECT random_col
+               FROM d
+               WHERE 1=1
+               UNION ALL SELECT even_more_cols
+               FROM e
+               WHERE 1=1
+               UNION ALL SELECT lets_go_deeper
+               FROM f
+               WHERE 1=1
+            WHERE 2=2
+            GROUP BY last_col
+            LIMIT 50000;"""
+        self.assertEquals(
+            {'a', 'b', 'c', 'd', 'e', 'f'},
+            self.extract_tables(query))
+
