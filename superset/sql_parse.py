@@ -13,7 +13,7 @@ from sqlparse.tokens import Keyword, Name
 
 RESULT_OPERATIONS = {'UNION', 'INTERSECT', 'EXCEPT', 'SELECT'}
 ON_KEYWORD = 'ON'
-PRECEDES_TABLE_NAME = {'FROM', 'JOIN', 'DESC', 'DESCRIBE', 'WITH'}
+PRECEDES_TABLE_NAME = {'FROM', 'JOIN', 'DESC', 'DESCRIBE'}
 
 
 class SupersetQuery(object):
