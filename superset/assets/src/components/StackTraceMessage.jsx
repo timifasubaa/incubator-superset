@@ -38,7 +38,7 @@ class StackTraceMessage extends React.PureComponent {
         >
           {this.props.message}
           {this.hasLink() &&
-          <a href={this.props.queryResponse.link}> (Request Access) </a>
+          <a href={this.props.queryResponse.link} target="_blank"> (Request Access) </a>
        }
         </Alert>
         {this.hasTrace() &&
