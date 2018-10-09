@@ -187,7 +187,8 @@ export default class ResultSet extends React.PureComponent {
         return <Alert bsStyle="warning">The query returned no data</Alert>;
       }
     }
-    if (query.cached) {
+    //if (query.cached) {
+      //this should be taken out and put in the preview card...
       return (
         <Button
           bsSize="sm"
@@ -197,7 +198,7 @@ export default class ResultSet extends React.PureComponent {
           {t('Fetch data preview')}
         </Button>
       );
-    }
+    //}
     let progressBar;
     let trackingUrl;
     if (query.progress > 0) {

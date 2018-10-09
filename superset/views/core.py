@@ -2482,6 +2482,7 @@ class Superset(BaseSupersetView):
 
         rejected_tables = security_manager.rejected_datasources(sql, mydb, schema)
         if rejected_tables:
+            print("denied access...")
             return json_error_response(
                 security_manager.get_table_access_error_msg(rejected_tables),
                 link=security_manager.get_table_access_link(rejected_tables),

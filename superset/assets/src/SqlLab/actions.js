@@ -275,6 +275,7 @@ export function queryEditorSetSelectedText(queryEditor, sql) {
 }
 
 export function mergeTable(table, query) {
+  console.log("I am in merge table...");
   return { type: MERGE_TABLE, table, query };
 }
 
@@ -291,8 +292,8 @@ export function addTable(query, tableName, schemaName) {
       isExtraMetadataLoading: true,
       expanded: false,
     })));
-
-    let url = `/superset/table/${query.dbId}/${tableName}/${schemaName}/`;
+    //start comment here...
+    /*let url = `/superset/table/${query.dbId}/${tableName}/${schemaName}/`;
     $.get(url, (data) => {
       const dataPreviewQuery = {
         id: shortid.generate(),
@@ -319,9 +320,9 @@ export function addTable(query, tableName, schemaName) {
       });
       dispatch(mergeTable(newTable));
       dispatch(addDangerToast(t('Error occurred while fetching table metadata')));
-    });
+    });*/
 
-    url = `/superset/extra_table_metadata/${query.dbId}/${tableName}/${schemaName}/`;
+    let url = `/superset/extra_table_metadata/${query.dbId}/${tableName}/${schemaName}/`;
     $.get(url, (data) => {
       table = Object.assign({}, table, data, { isExtraMetadataLoading: false });
       dispatch(mergeTable(table));
@@ -333,6 +334,7 @@ export function addTable(query, tableName, schemaName) {
       dispatch(mergeTable(newTable));
       dispatch(addDangerToast(t('Error occurred while fetching table metadata')));
     });
+    //end comment here 
   };
 }
 
