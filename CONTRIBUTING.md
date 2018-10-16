@@ -321,7 +321,6 @@ tox -e <environment>
 i.e.,
 
 ```bash
-tox -e py27
 tox -e py36
 ```
 
